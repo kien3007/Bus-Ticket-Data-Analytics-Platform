@@ -306,8 +306,7 @@ def _merge_to_master_jsonl(df_new: pd.DataFrame):
 # ======================
 def crwl_facility():
     provinces_keys = {
-        "binh-thuan": "129t1111",
-        "binh-dinh": "129t181",
+        "binh-thuan": "129t1111"
     }
 
     # Vexere hay trả về data tốt hơn nếu query ngày ngày mai

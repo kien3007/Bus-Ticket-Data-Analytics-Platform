@@ -257,7 +257,6 @@ def process_preloaded_province(province, driver):
 def crwl_ticket():
     provinces_keys = {
         "binh-thuan": "129t1111",
-        "binh-dinh": "129t181",
     }
 
     province_items = list(provinces_keys.items())

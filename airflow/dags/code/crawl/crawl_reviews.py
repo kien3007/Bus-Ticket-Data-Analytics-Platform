@@ -525,7 +525,6 @@ def crwl_reviews():
     provinces_keys = {
         # Bạn có thể bật/tắt bớt tỉnh để thử ổn định
         "binh-thuan": "129t1111",
-        "binh-dinh": "129t181",
     }
 
     # Vexere ổn hơn khi query ngày mai -> PHẢI là dd-mm-YYYY
