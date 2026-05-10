@@ -180,12 +180,24 @@ def get_company_id(province, key, driver, date_str):
         return []
 
     ids = []
-    containers = driver.find_elements(By.CSS_SELECTOR, "[data-company-id]")
-    names = [b.text.strip() for b in driver.find_elements(By.CLASS_NAME, "bus-name")]
-    comp_ids = [c.get_attribute("data-company-id") or "Unknown" for c in containers]
-    n = min(len(names), len(comp_ids))
-    for i in range(n):
-        ids.append([names[i], comp_ids[i]])
+    # Vexere dùng class 'ticket-item' hoặc 'ticket' tùy version, thường chứa data-company-id
+    # Chúng ta tìm các container có data-company-id
+    containers = driver.find_elements(By.XPATH, "//*[@data-company-id]")
+    
+    for container in containers:
+        try:
+            # Tìm tên nhà xe bên trong container này
+            name_el = container.find_element(By.CLASS_NAME, "bus-name")
+            name = (name_el.text or "").strip()
+            comp_id = container.get_attribute("data-company-id") or "Unknown"
+            
+            if name:
+                ids.append([name, comp_id])
+        except Exception:
+            # Bỏ qua nếu không tìm thấy tên (có thể là container rác)
+            continue
+            
+    print(f"  - Tìm thấy {len(ids)} nhà xe từ container.")
     return ids
 
 
@@ -306,7 +318,7 @@ def _merge_to_master_jsonl(df_new: pd.DataFrame):
 # ======================
 def crwl_facility():
     provinces_keys = {
-        "binh-thuan": "129t1111"
+        "binh-thuan": "129t1111",
     }
 
     # Vexere hay trả về data tốt hơn nếu query ngày ngày mai

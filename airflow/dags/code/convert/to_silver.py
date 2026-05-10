@@ -35,9 +35,9 @@ def _vn_norm_py(s: str) -> str:
     return s
 
 def _bus_norm_py(s: str) -> str:
+    # Giữ nguyên tiếng Việt, chỉ làm sạch khoảng trắng và viết thường
+    # Regex cũ [^a-z0-9\s\-] đã xóa mất các ký tự có dấu (á, à, ỏ,...)
     s = _vn_norm_py(s)
-    s = re.sub(r"[^a-z0-9\s\-]", "", s)
-    s = re.sub(r"\s+", " ", s).strip()
     return s
 
 def _split_route_py(route: str) -> Tuple[str, str]:

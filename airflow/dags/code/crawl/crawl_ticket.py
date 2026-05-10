@@ -118,52 +118,57 @@ def parse_available(seat_available_text: str):
         return None
 
 def extract_bus_data(driver, province):
-    bus_names        = _safe_texts(driver.find_elements(By.CLASS_NAME, "bus-name"))
-    fares            = _safe_texts(driver.find_elements(By.CLASS_NAME, "fare"))
-    departures_time  = _safe_texts(driver.find_elements(By.CSS_SELECTOR, ".from .hour"))
-    departures_place = _safe_texts(driver.find_elements(By.CSS_SELECTOR, ".from .place"))
-    arrivals_time    = _safe_texts(driver.find_elements(By.CSS_SELECTOR, ".content-to-info .hour"))
-    arrivals_place   = _safe_texts(driver.find_elements(By.CSS_SELECTOR, ".content-to-info .place"))
-    durations        = _safe_texts(driver.find_elements(By.CLASS_NAME, "duration"))
-    seat_types       = _safe_texts(driver.find_elements(By.CLASS_NAME, "seat-type"))
-    seat_available   = _safe_texts(driver.find_elements(By.CLASS_NAME, "seat-available"))
-
-    n = min(
-        len(bus_names), len(fares), len(departures_time), len(departures_place),
-        len(arrivals_time), len(arrivals_place), len(durations),
-        len(seat_types), len(seat_available)
-    )
-
+    wait = WebDriverWait(driver, 10)
     data = []
     date = datetime.now().strftime("%Y-%m-%d")
+    
+    # Tìm các container vé
+    ticket_containers = driver.find_elements(By.XPATH, "//div[contains(@class, 'ticket')]")
+    print(f"  - Đang trích xuất {len(ticket_containers)} vé cho {province}...")
+    
     bus_id = 1
-    for i in range(n):
-        route = f"TP.HCM - {province.replace('-', ' ').title()}"
+    for container in ticket_containers:
+        try:
+            # Lấy các trường thông tin bên trong container
+            def get_text(selector, by=By.CLASS_NAME):
+                try:
+                    return container.find_element(by, selector).text.strip()
+                except:
+                    return ""
 
-        # ---- compute Ticket_Sold (estimated) ----
-        capacity  = parse_capacity(seat_types[i])
-        available = parse_available(seat_available[i])
-        if capacity is not None and available is not None:
-            ticket_sold = max(capacity - available, 0)
-        else:
-            ticket_sold = ""  # thiếu dữ liệu → để trống
+            name = get_text("bus-name")
+            if not name: continue # Bỏ qua nếu không có tên nhà xe
+            
+            fare = get_text("fare")
+            dep_time = get_text(".from .hour", By.CSS_SELECTOR)
+            dep_place = get_text(".from .place", By.CSS_SELECTOR)
+            arr_time = get_text(".content-to-info .hour", By.CSS_SELECTOR)
+            arr_place = get_text(".content-to-info .place", By.CSS_SELECTOR)
+            duration = get_text("duration")
+            seat_type = get_text("seat-type")
+            seat_avail = get_text("seat-available")
 
-        data.append([
-            bus_id,
-            bus_names[i],
-            date,
-            route,
-            departures_time[i],
-            arrivals_time[i],
-            departures_place[i],
-            arrivals_place[i],
-            durations[i],
-            seat_types[i],
-            seat_available[i],
-            fares[i],
-            ticket_sold,              # <-- NEW COLUMN at the end
-        ])
-        bus_id += 1
+            route = f"TP.HCM - {province.replace('-', ' ').title()}"
+
+            # Compute Ticket_Sold
+            capacity = parse_capacity(seat_type)
+            available = parse_available(seat_avail)
+            if capacity is not None and available is not None:
+                ticket_sold = max(capacity - available, 0)
+            else:
+                ticket_sold = ""
+
+            data.append([
+                bus_id, name, date, route,
+                dep_time, arr_time, dep_place, arr_place,
+                duration, seat_type, seat_avail, fare,
+                ticket_sold
+            ])
+            bus_id += 1
+        except Exception as e:
+            # print(f"    ! Lỗi trích xuất một vé: {e}")
+            continue
+
     return data
 
 def save_to_csv(data, filename=None):
